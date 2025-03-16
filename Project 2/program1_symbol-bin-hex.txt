@@ -1,0 +1,232 @@
+/*
+R0: loop index
+R1: result number
+R2: closest number
+R3: used to calculate diffenences
+
+IX1: loop index
+
+Memory:
+$10 => 200
+$11 => closest index (ci)
+$12 => 202
+$13 => 400
+$14 => 800
+$15 => MAIN_LOOP $44
+$16 => TERMINATE $112
+$17 => next $56
+$20-$99 program instructions
+$200 closest difference (cd)
+$202 closest number (cn)
+$400 number to search for (dest)
+$800-$819 array of numbers to search (arr)
+
+*/
+
+SIR 2,0,1			get -1 at R2 (all 1's)
+000111 10 00 0 00001
+1E01
+
+SRC 2,1,1,1			logical shift 1 to the right (R2 == 32767)I
+011111 10 1 1 00 0001
+7EC1
+
+AIR 0,0,25
+000110 00 00 0 11001
+1819
+
+SRC 0,3,0,0			R0 = 200
+011111 00 0 0 00 0011
+7C03
+r al lr c 
+r c lr al
+
+STR 0,0,10			store 200 at $10
+000010 00 00 0 01010
+80A
+
+SRC 0,1,0,0			R0 = 400
+011111 00 0 0 00 0001
+7C01
+
+STR 0,0,13			store 400 at $13
+000010 00 00 0 01101
+80D
+
+SRC 0,1,0,0			R0 = 800
+011111 00 0 0 00 0001
+7C01
+
+STR 0,0,14			store 800 at $14
+000010 00 00 0 01110
+80E
+
+SRC 0,2,1,0			R0 = 200
+011111 00 0 1 00 0010
+7C42
+
+AIR 0,0,1			R0 = 201
+000110 00 00 0 00001
+1801
+
+STR 0,0,11			store 201 at $11
+000010 00 00 0 01011
+80B
+
+AIR 0,0,1			R0 = 202
+000110 00 00 0 00001
+1801
+
+STR 0,0,12			store 202 at $12
+000010 00 00 0 01100
+80C
+
+STR 2,0,200			store R2 at $200
+000010 10 00 1 01010
+A2A
+
+LDA 0,0,11
+000011 00 00 0 01011
+C0B
+
+SRC 0,2,0,0			R0 = 44 = MAIN_LOOP
+011111 00 0 0 00 0010
+7C02
+
+STR 0,0,15			store MAIN_LOOP at $15
+000010 00 00 0 01111
+80F
+
+AIR 0,0,12			R0 = 56 = next
+000110 00 00 0 01100
+180C
+
+STR 0,0,17			store next at $17
+000010 00 00 0 10001
+811
+
+SRC 0,1,0,0			R0 = 112 = TERM
+011111 00 0 0 00 0001
+7C01
+
+STR 0,0,16			store TERM at $16
+000010 00 00 0 10000
+810
+
+LDA 0,0,20			initialize loop index R0 to 19 (i = 19)
+000011 00 00 0 10100
+C14
+
+JMA 0,44			jump to mainloop
+001101 00 00 1 01111
+342F
+
+MAIN_LOOP:
+JZ 0,0,TERMINATE		if loop index is zero, terminate
+001010 00 00 1 10000
+2830
+
+AMR 0,0,14			R0 = R0 + 800
+000100 00 00 0 01110
+100E
+
+STR 0,0,11			store current index at $11
+000010 00 00 0 01011
+80B
+
+LDX 1,11			load current index to IX1
+101001 00 01 0 01011 
+A44B
+
+LDR 3,0,400			load R3 with dest
+000001 11 00 1 01101
+72D
+
+LDR 1,1,0			load R1 with current arr element
+000001 01 01 0 00000
+56E
+
+SMR 3,1,0			R3 = R3 - arr[i]; calculate difference between current arr element with dest
+000101 11 01 0 00000
+1740
+
+SMR 0,0,14			R0 = R0 - 800
+000101 00 00 0 01110
+140E
+
+JGE 3,0,next=$55		if R3 is positive skip to next
+010001 11 00 1 10001
+4731
+
+STR 3,0,201			if not R3 = - R3
+000010 11 00 1 01011
+B2B
+SMR 3,0,201
+000101 11 00 1 01011
+172B
+SMR 3,0,201
+000101 11 00 1 01011
+172B
+
+next:
+JZ 3,0,TERMINATE		if R3 == 0 then terminate; we have found the dest
+001010 11 00 1 10000
+2B30
+
+SMR 3,0,200			R3 = R3 - cd; subtract closest diff from diff to compare them
+000101 11 00 1 01010
+172A
+
+SIR 0,0,1
+000111 00 00 0 00001
+1C01
+
+JGE 3,0,MAIN_LOOP		if closest diff is still closest decrement R0 and jump to loop start
+010001 11 00 1 01111
+472F
+
+AIR 0,0,1			else dont decrement R0
+000110 00 00 0 00001
+1801
+
+STR 1,0,202			store closest number at $202
+000010 01 00 1 01100
+92C
+
+AMR 3,0,200 			calculate closest diff
+000100 11 00 1 01010
+132A
+
+STR 3,0,200			store closest diff
+000010 11 00 1 01010
+B2A
+
+SOB 0,0,MAIN_LOOP		decrement R0 and jump to loop start
+010000 00 00 1 01111
+402F
+
+TERMINATE:
+STR 1,0,202			store closest number at $202
+000010 01 00 1 01100
+92C
+
+HLT
+0000000000000000
+0000
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
